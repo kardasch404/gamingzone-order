@@ -33,7 +33,7 @@ enum FulfillmentStatus {
 }
 
 model Order {
-  id              String            @id @default(uuid())
+  id              String            @id @default(dbgenerated("uuid_generate_v7()"))
   orderNumber     String            @unique
   userId          String
   
@@ -76,7 +76,7 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(uuid())
+  id            String   @id @default(dbgenerated("uuid_generate_v7()"))
   orderId       String
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
@@ -98,7 +98,7 @@ model OrderItem {
 }
 
 model OrderStatusHistory {
-  id         String       @id @default(uuid())
+  id         String       @id @default(dbgenerated("uuid_generate_v7()"))
   orderId    String
   order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
@@ -117,7 +117,7 @@ model OrderStatusHistory {
 }
 
 model OrderSequence {
-  id         String   @id @default(uuid())
+  id         String   @id @default(dbgenerated("uuid_generate_v7()"))
   year       Int      @unique
   lastNumber Int      @default(0)
   updatedAt  DateTime @updatedAt
