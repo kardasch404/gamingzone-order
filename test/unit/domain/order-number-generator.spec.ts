@@ -30,7 +30,9 @@ describe('OrderNumberGenerator', () => {
     const year = new Date().getFullYear();
     const mockSequence = { year, lastNumber: 1, id: 'test', updatedAt: new Date() };
 
-    (prismaService.$transaction as jest.Mock).mockResolvedValue(mockSequence);
+    (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+      return await callback({ orderSequence: { upsert: jest.fn().mockResolvedValue(mockSequence) } });
+    });
 
     const orderNumber = await service.generate();
     expect(orderNumber).toMatch(/^ORD-\d{4}-\d{6}$/);
@@ -41,7 +43,9 @@ describe('OrderNumberGenerator', () => {
     const year = new Date().getFullYear();
     const mockSequence = { year, lastNumber: 42, id: 'test', updatedAt: new Date() };
 
-    (prismaService.$transaction as jest.Mock).mockResolvedValue(mockSequence);
+    (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+      return await callback({ orderSequence: { upsert: jest.fn().mockResolvedValue(mockSequence) } });
+    });
 
     const orderNumber = await service.generate();
     expect(orderNumber).toBe(`ORD-${year}-000042`);
@@ -51,7 +55,9 @@ describe('OrderNumberGenerator', () => {
     const year = new Date().getFullYear();
     const mockSequence = { year, lastNumber: 999999, id: 'test', updatedAt: new Date() };
 
-    (prismaService.$transaction as jest.Mock).mockResolvedValue(mockSequence);
+    (prismaService.$transaction as jest.Mock).mockImplementation(async (callback) => {
+      return await callback({ orderSequence: { upsert: jest.fn().mockResolvedValue(mockSequence) } });
+    });
 
     const orderNumber = await service.generate();
     expect(orderNumber).toBe(`ORD-${year}-999999`);
