@@ -42,6 +42,7 @@ model Order {
   fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
   
   items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
   
   subtotal        Decimal           @db.Decimal(10, 2)
   taxAmount       Decimal           @db.Decimal(10, 2)
@@ -94,4 +95,23 @@ model OrderItem {
   @@index([orderId])
   @@index([sku])
   @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String       @id @default(uuid())
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  
+  changedBy  String?
+  reason     String?
+  notes      String?
+  
+  createdAt  DateTime     @default(now())
+  
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_status_history")
 }
