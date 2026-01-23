@@ -75,13 +75,23 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId     String
+  sku           String
+  name          String
+  price         Decimal  @db.Decimal(10, 2)
+  quantity      Int
+  subtotal      Decimal  @db.Decimal(10, 2)
+  
+  image         String?
+  reservationId String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([orderId])
+  @@index([sku])
   @@map("order_items")
 }
