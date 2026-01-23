@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
-import { OrderStateMachine } from '../../../domain/services/order-state-machine.service';
+import { OrderStateMachine } from '../../domain/services/order-state-machine.service';
 
 @Injectable()
 export class OrderStatusValidationService {

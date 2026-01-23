@@ -26,6 +26,7 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/microservices": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/swagger": "^11.2.5",
     "@prisma/client": "^5.0.0",
     "cache-manager": "^7.2.8",
     "kafkajs": "^2.2.4",
