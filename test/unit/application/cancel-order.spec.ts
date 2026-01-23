@@ -51,16 +51,16 @@ describe('CancelOrderUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CancelOrderUseCase,
-        { provide: 'IOrderRepository', useValue: mockRepo },
+        { provide: IOrderRepository, useValue: mockRepo },
         { provide: InventoryGrpcClient, useValue: mockInventory },
-        { provide: 'IEventBus', useValue: mockEventBus },
+        { provide: IEventBus, useValue: mockEventBus },
       ],
     }).compile();
 
     useCase = module.get<CancelOrderUseCase>(CancelOrderUseCase);
-    orderRepository = module.get('IOrderRepository');
+    orderRepository = module.get(IOrderRepository);
     inventoryClient = module.get(InventoryGrpcClient);
-    eventBus = module.get('IEventBus');
+    eventBus = module.get(IEventBus);
   });
 
   it('should cancel order successfully', async () => {

@@ -21,7 +21,8 @@ export class OrderStatusValidationService {
   }
 
   canBeCancelled(status: OrderStatus): boolean {
-    return [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(status);
+    const allowedStatuses: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
+    return allowedStatuses.includes(status);
   }
 
   canBeModified(status: OrderStatus): boolean {
@@ -29,10 +30,11 @@ export class OrderStatusValidationService {
   }
 
   isTerminalStatus(status: OrderStatus): boolean {
-    return [
+    const terminalStatuses: OrderStatus[] = [
       OrderStatus.DELIVERED,
       OrderStatus.CANCELLED,
       OrderStatus.REFUNDED,
-    ].includes(status);
+    ];
+    return terminalStatuses.includes(status);
   }
 }

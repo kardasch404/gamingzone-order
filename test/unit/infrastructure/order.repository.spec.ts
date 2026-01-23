@@ -22,7 +22,7 @@ describe('OrderRepository', () => {
     totalAmount: 230,
     currency: 'MAD',
     shippingAddress: { name: 'John', phone: '123', address: 'St', city: 'City', postalCode: '12345' },
-    items: [],
+    items: [{ id: '1', productId: 'p1', sku: 'SKU-1', name: 'Product', quantity: 1, price: 100 }],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
