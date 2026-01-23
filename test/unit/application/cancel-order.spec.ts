@@ -13,7 +13,7 @@ describe('CancelOrderUseCase', () => {
   let inventoryClient: jest.Mocked<InventoryGrpcClient>;
   let eventBus: jest.Mocked<IEventBus>;
 
-  const mockOrder = Order.create({
+  const createMockOrder = () => Order.create({
     id: 'order-1',
     orderNumber: 'ORD-2026-000001',
     userId: 'user-1',
@@ -51,19 +51,20 @@ describe('CancelOrderUseCase', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CancelOrderUseCase,
-        { provide: IOrderRepository, useValue: mockRepo },
+        { provide: 'IOrderRepository', useValue: mockRepo },
         { provide: InventoryGrpcClient, useValue: mockInventory },
-        { provide: IEventBus, useValue: mockEventBus },
+        { provide: 'IEventBus', useValue: mockEventBus },
       ],
     }).compile();
 
     useCase = module.get<CancelOrderUseCase>(CancelOrderUseCase);
-    orderRepository = module.get(IOrderRepository);
+    orderRepository = module.get('IOrderRepository');
     inventoryClient = module.get(InventoryGrpcClient);
-    eventBus = module.get(IEventBus);
+    eventBus = module.get('IEventBus');
   });
 
   it('should cancel order successfully', async () => {
+    const mockOrder = createMockOrder();
     orderRepository.findById.mockResolvedValue(mockOrder);
 
     const command = new CancelOrderCommand('order-1', 'user-1', 'Customer request');
@@ -83,6 +84,7 @@ describe('CancelOrderUseCase', () => {
   });
 
   it('should throw error if user unauthorized', async () => {
+    const mockOrder = createMockOrder();
     orderRepository.findById.mockResolvedValue(mockOrder);
 
     const command = new CancelOrderCommand('order-1', 'other-user', 'Reason');
@@ -91,6 +93,7 @@ describe('CancelOrderUseCase', () => {
   });
 
   it('should release inventory reservations', async () => {
+    const mockOrder = createMockOrder();
     orderRepository.findById.mockResolvedValue(mockOrder);
 
     const command = new CancelOrderCommand('order-1', 'user-1', 'Reason');

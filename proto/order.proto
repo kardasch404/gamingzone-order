@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc GetOrderByNumber(GetOrderByNumberRequest) returns (OrderResponse);
+}
+
+message GetOrderRequest {
+  string orderId = 1;
+}
+
+message GetOrderByNumberRequest {
+  string orderNumber = 1;
+}
+
+message OrderResponse {
+  string id = 1;
+  string orderNumber = 2;
+  string userId = 3;
+  string status = 4;
+  double totalAmount = 5;
+  string currency = 6;
+}
