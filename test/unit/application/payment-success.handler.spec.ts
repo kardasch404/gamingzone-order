@@ -57,17 +57,17 @@ describe('PaymentSuccessHandler', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentSuccessHandler,
-        { provide: 'IOrderRepository', useValue: mockRepo },
+        { provide: IOrderRepository, useValue: mockRepo },
         { provide: InventoryGrpcClient, useValue: mockInventory },
-        { provide: 'IEventBus', useValue: mockEventBus },
+        { provide: IEventBus, useValue: mockEventBus },
         { provide: IdempotencyService, useValue: mockIdempotency },
       ],
     }).compile();
 
     handler = module.get<PaymentSuccessHandler>(PaymentSuccessHandler);
-    orderRepository = module.get('IOrderRepository');
+    orderRepository = module.get(IOrderRepository);
     inventoryClient = module.get(InventoryGrpcClient);
-    eventBus = module.get('IEventBus');
+    eventBus = module.get(IEventBus);
     idempotency = module.get(IdempotencyService);
   });
 
