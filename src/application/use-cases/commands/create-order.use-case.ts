@@ -8,6 +8,8 @@ import { UuidGenerator } from '../../../shared/utils/uuid-generator.util';
 import { CartValidationService, Cart } from '../../services/cart-validation.service';
 import { OrderCalculationService } from '../../services/order-calculation.service';
 import { InventoryGrpcClient } from '../../../infrastructure/grpc/clients/inventory-grpc.client';
+import { IEventBus } from '../../../domain/interfaces/event-bus.interface';
+import { OrderCreatedEvent } from '../../../domain/events/order.events';
 
 @Injectable()
 export class CreateOrderUseCase {
@@ -17,6 +19,7 @@ export class CreateOrderUseCase {
     private readonly cartValidation: CartValidationService,
     private readonly orderCalculation: OrderCalculationService,
     private readonly inventoryClient: InventoryGrpcClient,
+    private readonly eventBus: IEventBus,
   ) {}
 
   async execute(command: CreateOrderCommand, cart: Cart): Promise<OrderDTO> {
@@ -77,6 +80,15 @@ export class CreateOrderUseCase {
     });
 
     await this.orderRepository.save(order);
+
+    await this.eventBus.publish(
+      new OrderCreatedEvent(
+        order.id,
+        order.orderNumber,
+        order.userId,
+        order.totalAmount,
+      ),
+    );
 
     return OrderDTO.fromDomain(order);
   }
