@@ -5,7 +5,7 @@ export class OrderItem {
     public readonly sku: string,
     public readonly name: string,
     public readonly price: number,
-    public readonly quantity: int,
+    public readonly quantity: number,
     public readonly subtotal: number,
     public readonly image: string | null = null,
     public readonly reservationId: string | null = null,

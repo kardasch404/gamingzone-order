@@ -102,7 +102,8 @@ export class Order extends AggregateRoot {
   }
 
   cancel(reason: string): void {
-    if (![OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(this.status)) {
+    const allowedStatuses: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
+    if (!allowedStatuses.includes(this.status)) {
       throw new Error(`Cannot cancel order in ${this.status} status`);
     }
 
@@ -152,7 +153,8 @@ export class Order extends AggregateRoot {
   }
 
   canBeCancelled(): boolean {
-    return [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(this.status);
+    const allowedStatuses: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
+    return allowedStatuses.includes(this.status);
   }
 
   canBeModified(): boolean {
