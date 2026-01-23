@@ -7,27 +7,121 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  RETURNED
+}
+
 model Order {
-  id          String   @id @default(uuid())
-  userId      String
-  status      String
-  totalAmount Float
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  items OrderItem[]
-
+  id              String            @id @default(dbgenerated("uuid_generate_v7()"))
+  orderNumber     String            @unique
+  userId          String
+  
+  status          OrderStatus       @default(PENDING)
+  paymentStatus   PaymentStatus     @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  
+  items           OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  
+  subtotal        Decimal           @db.Decimal(10, 2)
+  taxAmount       Decimal           @db.Decimal(10, 2)
+  shippingCost    Decimal           @db.Decimal(10, 2) @default(0)
+  discount        Decimal           @db.Decimal(10, 2) @default(0)
+  totalAmount     Decimal           @db.Decimal(10, 2)
+  currency        String            @default("MAD")
+  
+  shippingAddress Json
+  billingAddress  Json?
+  
+  paymentMethod   String?
+  paymentId       String?
+  paidAt          DateTime?
+  
+  notes           String?
+  cancelReason    String?
+  cancelledAt     DateTime?
+  
+  estimatedDelivery DateTime?
+  deliveredAt     DateTime?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
   @@map("orders")
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
+  id            String   @id @default(dbgenerated("uuid_generate_v7()"))
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId     String
+  sku           String
+  name          String
+  price         Decimal  @db.Decimal(10, 2)
+  quantity      Int
+  subtotal      Decimal  @db.Decimal(10, 2)
+  
+  image         String?
+  reservationId String?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([orderId])
+  @@index([sku])
   @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String       @id @default(dbgenerated("uuid_generate_v7()"))
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  
+  changedBy  String?
+  reason     String?
+  notes      String?
+  
+  createdAt  DateTime     @default(now())
+  
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("order_status_history")
+}
+
+model OrderSequence {
+  id         String   @id @default(dbgenerated("uuid_generate_v7()"))
+  year       Int      @unique
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+  
+  @@index([year])
+  @@map("order_sequences")
 }
