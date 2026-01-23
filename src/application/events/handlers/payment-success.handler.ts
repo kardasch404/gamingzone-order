@@ -3,6 +3,7 @@ import { IOrderRepository } from '../../../domain/interfaces/order-repository.in
 import { IEventBus } from '../../../domain/interfaces/event-bus.interface';
 import { InventoryGrpcClient } from '../../../infrastructure/grpc/clients/inventory-grpc.client';
 import { OrderConfirmedEvent } from '../../../domain/events/order.events';
+import { IdempotencyService } from '../../services/idempotency.service';
 
 export interface PaymentSucceededEvent {
   eventId: string;
@@ -18,9 +19,15 @@ export class PaymentSuccessHandler {
     private readonly orderRepository: IOrderRepository,
     private readonly inventoryClient: InventoryGrpcClient,
     private readonly eventBus: IEventBus,
+    private readonly idempotency: IdempotencyService,
   ) {}
 
   async handle(event: PaymentSucceededEvent): Promise<void> {
+    if (await this.idempotency.isEventProcessed(event.eventId)) {
+      console.log(`Event ${event.eventId} already processed`);
+      return;
+    }
+
     const order = await this.orderRepository.findById(event.orderId);
 
     if (!order) {
@@ -38,5 +45,7 @@ export class PaymentSuccessHandler {
     await this.eventBus.publish(
       new OrderConfirmedEvent(order.id, order.orderNumber, event.paymentId),
     );
+
+    await this.idempotency.markEventProcessed(event.eventId);
   }
 }
