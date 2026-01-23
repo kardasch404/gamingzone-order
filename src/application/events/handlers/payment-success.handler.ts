@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { IOrderRepository } from '../../../domain/interfaces/order-repository.interface';
 import { IEventBus } from '../../../domain/interfaces/event-bus.interface';
 import { InventoryGrpcClient } from '../../../infrastructure/grpc/clients/inventory-grpc.client';
@@ -16,9 +16,9 @@ export interface PaymentSucceededEvent {
 @Injectable()
 export class PaymentSuccessHandler {
   constructor(
-    private readonly orderRepository: IOrderRepository,
+    @Inject('IOrderRepository') private readonly orderRepository: IOrderRepository,
     private readonly inventoryClient: InventoryGrpcClient,
-    private readonly eventBus: IEventBus,
+    @Inject('IEventBus') private readonly eventBus: IEventBus,
     private readonly idempotency: IdempotencyService,
   ) {}
 
