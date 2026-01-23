@@ -115,3 +115,13 @@ model OrderStatusHistory {
   @@index([createdAt])
   @@map("order_status_history")
 }
+
+model OrderSequence {
+  id         String   @id @default(uuid())
+  year       Int      @unique
+  lastNumber Int      @default(0)
+  updatedAt  DateTime @updatedAt
+  
+  @@index([year])
+  @@map("order_sequences")
+}
