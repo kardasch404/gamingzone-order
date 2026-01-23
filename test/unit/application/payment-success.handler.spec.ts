@@ -1,23 +1,23 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CancelOrderUseCase } from '../../../src/application/use-cases/commands/cancel-order.use-case';
+import { PaymentSuccessHandler, PaymentSucceededEvent } from '../../../src/application/events/handlers/payment-success.handler';
 import { IOrderRepository } from '../../../src/domain/interfaces/order-repository.interface';
 import { IEventBus } from '../../../src/domain/interfaces/event-bus.interface';
 import { InventoryGrpcClient } from '../../../src/infrastructure/grpc/clients/inventory-grpc.client';
-import { CancelOrderCommand } from '../../../src/application/dto/request/cancel-order.command';
+import { IdempotencyService } from '../../../src/application/services/idempotency.service';
 import { Order } from '../../../src/domain/aggregates/order.aggregate';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
 
-describe('CancelOrderUseCase', () => {
-  let useCase: CancelOrderUseCase;
+describe('PaymentSuccessHandler', () => {
+  let handler: PaymentSuccessHandler;
   let orderRepository: jest.Mocked<IOrderRepository>;
   let inventoryClient: jest.Mocked<InventoryGrpcClient>;
   let eventBus: jest.Mocked<IEventBus>;
+  let idempotency: jest.Mocked<IdempotencyService>;
 
   const mockOrder = Order.create({
     id: 'order-1',
     orderNumber: 'ORD-2026-000001',
     userId: 'user-1',
-    items: [{ id: '1', productId: 'p1', sku: 'SKU-1', name: 'Product', quantity: 2, price: 100, reservationId: 'res-1' }],
+    items: [{ id: '1', productId: 'p1', sku: 'SKU-1', name: 'Product', quantity: 2, price: 100 }],
     subtotal: 200,
     taxAmount: 40,
     shippingCost: 30,
@@ -48,57 +48,74 @@ describe('CancelOrderUseCase', () => {
       publishAll: jest.fn(),
     };
 
+    const mockIdempotency = {
+      isEventProcessed: jest.fn().mockResolvedValue(false),
+      markEventProcessed: jest.fn(),
+      clearProcessedEvents: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CancelOrderUseCase,
+        PaymentSuccessHandler,
         { provide: IOrderRepository, useValue: mockRepo },
         { provide: InventoryGrpcClient, useValue: mockInventory },
         { provide: IEventBus, useValue: mockEventBus },
+        { provide: IdempotencyService, useValue: mockIdempotency },
       ],
     }).compile();
 
-    useCase = module.get<CancelOrderUseCase>(CancelOrderUseCase);
+    handler = module.get<PaymentSuccessHandler>(PaymentSuccessHandler);
     orderRepository = module.get(IOrderRepository);
     inventoryClient = module.get(InventoryGrpcClient);
     eventBus = module.get(IEventBus);
+    idempotency = module.get(IdempotencyService);
   });
 
-  it('should cancel order successfully', async () => {
+  it('should handle payment success', async () => {
     orderRepository.findById.mockResolvedValue(mockOrder);
 
-    const command = new CancelOrderCommand('order-1', 'user-1', 'Customer request');
+    const event: PaymentSucceededEvent = {
+      eventId: 'evt-1',
+      orderId: 'order-1',
+      paymentId: 'pay-123',
+      amount: 270,
+      timestamp: new Date(),
+    };
 
-    await useCase.execute(command);
+    await handler.handle(event);
 
     expect(orderRepository.save).toHaveBeenCalled();
     expect(eventBus.publish).toHaveBeenCalled();
+    expect(idempotency.markEventProcessed).toHaveBeenCalledWith('evt-1');
+  });
+
+  it('should skip already processed events', async () => {
+    idempotency.isEventProcessed.mockResolvedValue(true);
+
+    const event: PaymentSucceededEvent = {
+      eventId: 'evt-1',
+      orderId: 'order-1',
+      paymentId: 'pay-123',
+      amount: 270,
+      timestamp: new Date(),
+    };
+
+    await handler.handle(event);
+
+    expect(orderRepository.findById).not.toHaveBeenCalled();
   });
 
   it('should throw error if order not found', async () => {
     orderRepository.findById.mockResolvedValue(null);
 
-    const command = new CancelOrderCommand('order-1', 'user-1', 'Reason');
+    const event: PaymentSucceededEvent = {
+      eventId: 'evt-1',
+      orderId: 'order-1',
+      paymentId: 'pay-123',
+      amount: 270,
+      timestamp: new Date(),
+    };
 
-    await expect(useCase.execute(command)).rejects.toThrow('Order not found');
-  });
-
-  it('should throw error if user unauthorized', async () => {
-    orderRepository.findById.mockResolvedValue(mockOrder);
-
-    const command = new CancelOrderCommand('order-1', 'other-user', 'Reason');
-
-    await expect(useCase.execute(command)).rejects.toThrow('Unauthorized');
-  });
-
-  it('should release inventory reservations', async () => {
-    orderRepository.findById.mockResolvedValue(mockOrder);
-
-    const command = new CancelOrderCommand('order-1', 'user-1', 'Reason');
-
-    await useCase.execute(command);
-
-    expect(inventoryClient.releaseReservation).toHaveBeenCalledWith({
-      reservationId: 'res-1',
-    });
+    await expect(handler.handle(event)).rejects.toThrow('Order order-1 not found');
   });
 });
